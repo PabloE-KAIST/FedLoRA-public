@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "description": "homogeneous orinnx (collapse control)",
+  "clients": [
+    {
+      "client_id": 1,
+      "device_name": "orinnx1",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c1"
+    },
+    {
+      "client_id": 2,
+      "device_name": "orinnx2",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c2"
+    },
+    {
+      "client_id": 3,
+      "device_name": "orinnx3",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c3"
+    },
+    {
+      "client_id": 4,
+      "device_name": "orinnx4",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c4"
+    },
+    {
+      "client_id": 5,
+      "device_name": "orinnx5",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c5"
+    },
+    {
+      "client_id": 6,
+      "device_name": "orinnx6",
+      "device_class": "orinnx",
+      "budget_class": "orinnx",
+      "container_name": "c6"
+    }
+  ]
+}

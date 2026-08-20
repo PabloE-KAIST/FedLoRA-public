@@ -1,0 +1,63 @@
+# FedLoRA worker compose template for AegisGov device_agent integration.
+#
+# This template uses AegisGov's env var convention so that the C++
+# device_agent's runCompose() can launch FedLoRA workers without
+# modification.
+#
+# KEY DESIGN: AegisGov's runCompose() passes EXECUTABLE unquoted in its
+# system() call, so EXECUTABLE cannot contain spaces.  We set EXECUTABLE
+# to the path of a launcher script (launch_worker.sh) and pass the actual
+# worker args via START_STRING (JSON, properly single-quoted by runCompose).
+# The launcher reads START_STRING and builds the full worker CLI.
+#
+# AegisGov env vars (set by runCompose()):
+#   DOCKER_NAME      - Docker image tag
+#   CONTAINER_NAME   - Container name
+#   EXECUTABLE       - Path to launcher script (NO SPACES)
+#   START_STRING     - JSON config with worker args
+#   DEVICE           - GPU device ID
+#   PORT             - Control port
+#   PORT_OFFSET      - System offset
+#
+# Deployment:
+#   Copy this file to each Jetson at the path where device_agent expects
+#   docker-compose.jetson.yml:
+#     cp docker-compose.aegisgov.jetson.yml \
+#        <aegisgov_build_dir>/../dockerfiles/docker-compose.jetson.yml
+
+services:
+  workload:
+    image: ${DOCKER_NAME}
+    container_name: ${CONTAINER_NAME}
+    restart: "no"
+    network_mode: host
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
+    environment:
+      - PYTHONPATH=/workspace/FedLoRA
+      - HF_HOME=/workspace/.cache/huggingface
+      - TRANSFORMERS_CACHE=/workspace/.cache/huggingface
+      - TOKENIZERS_PARALLELISM=false
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+      - FEDLORA_DISABLE_GRADIENT_CHECKPOINTING=1
+      - START_STRING=${START_STRING:-}
+    volumes:
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/partitions:/workspace/FedLoRA/distributed/data/generated_partitions
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/configs:/workspace/FedLoRA/distributed/configs
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/models:/workspace/models
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/logs:/workspace/FedLoRA/logs
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/launch_worker.sh:/workspace/launch_worker.sh
+      # Overlay distributed/ package so container runs updated source
+      # without rebuilding the Docker image.
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/distributed:/workspace/FedLoRA/distributed
+      # Overlay federatedscope/ for same reason — lets us patch model_builder
+      # (e.g. fp16 dtype for Xavier) without a rebuild.
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/federatedscope:/workspace/FedLoRA/federatedscope
+      # Overlay 2_yamls/ so per-method distributed configs are always current.
+      - ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}/2_yamls:/workspace/FedLoRA/2_yamls
+    command: >-
+      ${EXECUTABLE}

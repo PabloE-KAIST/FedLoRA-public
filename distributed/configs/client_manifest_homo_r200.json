@@ -1,0 +1,48 @@
+{
+  "version": "1.0",
+  "description": "homogeneous agxorin (collapse control)",
+  "clients": [
+    {
+      "client_id": 1,
+      "device_name": "agxorin1",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c1"
+    },
+    {
+      "client_id": 2,
+      "device_name": "agxorin2",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c2"
+    },
+    {
+      "client_id": 3,
+      "device_name": "agxorin3",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c3"
+    },
+    {
+      "client_id": 4,
+      "device_name": "agxorin4",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c4"
+    },
+    {
+      "client_id": 5,
+      "device_name": "agxorin5",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c5"
+    },
+    {
+      "client_id": 6,
+      "device_name": "agxorin6",
+      "device_class": "agxorin",
+      "budget_class": "agxorin",
+      "container_name": "c6"
+    }
+  ]
+}

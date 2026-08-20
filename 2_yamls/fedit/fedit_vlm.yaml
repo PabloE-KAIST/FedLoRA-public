@@ -1,0 +1,110 @@
+seed: 50
+use_gpu: True
+device: 0
+
+outdir: exp_standalone/fedit_vlm
+
+debug: False
+
+federate:
+  mode: standalone
+  method: FedAvg
+  client_num: 12
+  total_round_num: 20
+  save_to: "ckpt/fedit_vlm.ckpt"
+  online_aggr: False
+  ignore_weight: False
+  share_local_model: False
+
+data:
+  root: data/
+  type: 'llava-instruct-150k@vlm'
+  splits: [0.90, 0.10]
+  splitter: 'iid'
+
+dataloader:
+  batch_size: 1
+
+model:
+  type: 'Qwen/Qwen2.5-VL-3B-Instruct@huggingface_vlm'
+
+trainer:
+  type: vlmtrainer
+
+train:
+  local_update_steps: 30
+  batch_or_epoch: batch
+  optimizer:
+    type: AdamW
+    lr: 0.0003
+    weight_decay: 0.01
+  scheduler:
+    type: CosineAnnealingLR
+    T_max: 20
+  is_enable_half: False
+
+criterion:
+  type: CrossEntropyLoss
+
+eval:
+  freq: 5
+  metrics: ['loss']
+  split: ['val']
+  report: ['weighted_avg']
+  best_res_update_round_wise_key: val_avg_loss
+  count_flops: False
+
+###############################################################################
+# VLM-specific settings (primary)
+###############################################################################
+vlm:
+  tok_len: 512
+  retry_on_nan_loss: True
+  image_dir: 'coco/train2017'
+  min_pixels: 200704
+  max_pixels: 200704
+
+  adapter:
+    use: True
+    mv_to_cpu: False
+
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj',
+                         'gate_proj', 'down_proj', 'up_proj']
+        r: 200
+        lora_alpha: 16
+        lora_dropout: 0.05
+
+    base_quant:
+      enabled: False
+
+    max_rank: 200
+    hetero_strategy: homo
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+
+    fah:
+      enabled: False
+
+    hetlora:
+      enabled: False
+
+    adasparse_lora:
+      enabled: False
+
+    adasparse_lorav2:
+      enabled: False
+
+###############################################################################
+# LLM/GLUE adapter configs (disabled stubs)
+###############################################################################
+llm:
+  adapter:
+    use: False
+
+glue:
+  adapter:
+    use: False

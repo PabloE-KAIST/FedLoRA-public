@@ -1,0 +1,66 @@
+// AegisGov-compatible control plane protobuf definitions.
+// These MUST match the wire format used by the C++ device_agent
+// (libs/utils/protobufprotocols/controlmessages.proto in AegisGov-master).
+//
+// Generated Python bindings: controlmessages_pb2.py
+// Regenerate with:
+//   protoc --python_out=. distributed/proto/controlmessages.proto
+
+syntax = "proto3";
+
+package controlmessages;
+
+enum SystemDeviceType {
+  UNKNOWN_DEVICE = 0;
+  OrinAGX = 3;
+  AGXXavier = 6;
+}
+
+message DeviceInfo {
+  string name = 1;
+  uint32 type = 2;
+  int32 processors = 3;
+  repeated uint64 memory = 4;
+  string ip_address = 5;
+  int32 agent_port_offset = 6;
+}
+
+message SystemInfo {
+  string name = 1;
+  string experiment = 2;
+  string ctrl_ip_address = 3;
+  int32 bandwidth_setting = 4;
+  repeated DownStreamElement offloading_targets = 5;
+}
+
+message DownStreamElement {
+  string name = 1;
+  string offloading_ip = 2;
+  int32 offloading_port = 3;
+  int32 bandwidth_id = 4;
+}
+
+message ContainerConfig {
+  string name = 1;
+  string docker_tag = 2;
+  string json_config = 3;
+  string executable = 4;
+  int32 device = 5;
+  int32 control_port = 6;
+  int32 model_type = 7;
+  repeated int32 input_shape = 8;
+}
+
+message ContainerSignal {
+  string name = 1;
+  bool forced = 2;
+}
+
+// PackagedMsg wraps an FL payload for device_agent relay (FWD_CONT path).
+// The device_agent's ForwardToContainer() parses this to route payloads
+// to the correct container.  We use `bytes` for payload (AegisGov uses
+// `string` but the protobuf wire format is identical for both).
+message PackagedMsg {
+  string target_name = 1;
+  bytes payload = 2;
+}

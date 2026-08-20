@@ -1,0 +1,181 @@
+# FAHQLoRA with heterogeneous quantization amd homogeneous network sampling.
+# federate.method: heterolora
+# glue.adapter.hetero_strategy: homo (for warm-up)
+# glue.adapter.fah.enabled: True 
+# glue.adapter.base_quant:
+        # enabled: True    # Set to True to enable heterogeneous base quantization
+        # distribution:
+        #  '4': 0.25
+        #  '8': 0.25
+        #  '16': 0.25
+        #  '32': 0.25
+        # lora_dtype: fp32 
+
+# Bandwidth mode: 'homogeneous': All clients share the SAME bandwidth that changes per round
+### This file is the same as fah_qlora-quantized.yaml but with bandwidth mode set to homogeneous.
+
+seed: 50
+use_gpu: True
+device: 0
+
+outdir: exp_standalone/quantized_fahqlora/homog
+
+federate:
+  mode: standalone
+  method: heterolora
+  client_num: 12
+  total_round_num: 20
+  save_to: "ckpt/fah_qlora.ckpt"
+  online_aggr: False
+  ignore_weight: False
+  share_local_model: False
+  communication: 
+    network_trace_distribution:
+      static: 0.0
+      pedestrian: 0.0
+      bus: 0.0
+      static_extended: 0.0
+      pedestrian_extended: 0.0
+
+data:
+  root: data/
+  type: 'sst2@glue'
+  splits: [0.90, 0.10]
+  splitter: 'iid'
+
+dataloader:
+  batch_size: 32
+
+model:
+  type: 'microsoft/deberta-large@huggingface_llm'
+  task: 'SequenceClassification'
+  out_channels: 2  # entailment / not_entailment?
+
+trainer:
+  type: gluetrainer
+
+train:  
+  local_update_steps: 30  
+  batch_or_epoch: batch  
+  optimizer:    
+    type: AdamW    
+    lr: 0.0005    
+    weight_decay: 0.01  
+  scheduler:    
+    type: CosineAnnealingLR    
+    T_max: 20  # Total FL rounds  
+  is_enable_half: False  # DeBERTa works better in fp32, but run in half precision to accommodate more clients
+
+criterion:
+  type: CrossEntropyLoss
+
+eval:
+  freq: 5
+  metrics: ['acc', 'f1', 'loss']
+  split: ['val']
+  report: ['weighted_avg']
+  best_res_update_round_wise_key: val_acc
+  count_flops: False
+
+###############################################################################
+# GLUE-specific settings
+###############################################################################
+glue:
+  max_length: 128
+  retry_on_nan_loss: True
+
+  adapter:
+    use: True
+    mv_to_cpu: False # Keep only the active client’s model on GPU
+    
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        # Target modules for DeBERTa-large:
+        # - attention.self.in_proj (Q, K, V projections)  
+        # - attention.output.dense (attention output)
+        # - intermediate.dense, output.dense (MLP/FFN layers)
+        target_modules: ['attention.self.in_proj', 'attention.output.dense', 
+                          'intermediate.dense', 'output.dense']
+        r: 8
+        lora_alpha: 16
+        lora_dropout: 0.05
+    # Heterogeneous Base Model Quantization (Official FAH-QLoRA feature)
+    # Per the paper: "Devices are divided into three groups: one-third utilize
+    # 4-bit quantized base models, another third use 8-bit quantized base 
+    # models, and the remaining third employ 16-bit quantized base models."
+    base_quant:
+      enabled: True  # Set to True to enable heterogeneous base quantization
+      # Distribution of quantization bits across clients (must sum to ~1.0)
+      # With 12 clients: 4 clients @ 4-bit, 4 clients @ 8-bit, 4 clients @ 16-bit
+      distribution:
+        '4': 0.25
+        '8': 0.25
+        '16': 0.25
+        '32': 0.25
+      lora_dtype: fp32  # LoRA modules dtype (fp32 as per paper)
+
+    max_rank: 100  # Smaller max for memory efficiency
+    hetero_strategy: homo
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+
+    fah:
+      enabled: True
+      init_rank: 16
+      r_min: 4
+      r_max: 100
+      lambda_dec: 1
+      lambda_inc: 1
+      warmup_rounds: 1
+      alpha_fraction: 0.3
+      validation_fraction: 0.2
+      validation_steps: 15
+
+###############################################################################
+# LLM adapter config (for compatibility)
+###############################################################################
+llm:
+  tok_len: 128
+  
+  adapter:
+    use: True
+    mv_to_cpu: False
+    
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        # Must match glue.adapter.args.target_modules for DeBERTa-large
+        target_modules: ['attention.self.in_proj', 'attention.output.dense',
+                         'intermediate.dense', 'output.dense']
+        r: 8
+        lora_alpha: 16
+        lora_dropout: 0.05
+    # Heterogeneous Base Model Quantization (must match glue.adapter.fah.base_quant)
+    base_quant:
+      enabled: True
+      distribution:
+        '4': 0.25
+        '8': 0.25
+        '16': 0.25
+        '32': 0.25
+      lora_dtype: fp32
+
+    max_rank: 100
+    hetero_strategy: homo
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+
+    fah:
+      enabled: True
+      init_rank: 16
+      r_min: 4
+      r_max: 100
+      lambda_dec: 1
+      lambda_inc: 1
+      warmup_rounds: 1
+      alpha_fraction: 0.3
+      validation_fraction: 0.2
+      validation_steps: 15

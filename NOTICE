@@ -1,0 +1,67 @@
+FedLoRA — Federated Fine-Tuning of Language Models with LoRA Adapters
+=====================================================================
+
+This product includes software developed by third parties, distributed
+under the Apache License, Version 2.0. See the LICENSE file for the full
+license text.
+
+-----------------------------------------------------------------------
+Upstream: FederatedScope
+-----------------------------------------------------------------------
+This repository is a FORK of FederatedScope (v0.3.0), a comprehensive
+federated learning platform.
+
+    Copyright 2022 Alibaba Group Holding Limited
+    https://github.com/alibaba/FederatedScope
+    Licensed under the Apache License, Version 2.0
+
+It also derives from the FederatedScope-LLM (FS-LLM) extension for
+federated fine-tuning of large language models.
+
+    https://github.com/alibaba/FederatedScope/tree/llm
+
+The majority of files under `federatedscope/` originate from that upstream
+project and remain under its copyright and license. Modifications made in
+this fork are noted below.
+
+-----------------------------------------------------------------------
+Modifications and additions in this fork
+-----------------------------------------------------------------------
+The following are contributed by this project and are likewise released
+under the Apache License, Version 2.0:
+
+  * Heterogeneous / adaptive LoRA method implementations under
+    `federatedscope/contrib/`:
+      - FedIT             (FedAvg with fixed homogeneous LoRA ranks)
+      - HetLoRA           (heterogeneous LoRA rank variants)
+      - FAH-QLoRA         (adaptive heterogeneous rank + heterogeneous
+                           quantization)
+      - AdaSparse-LoRA    (v1/v2/v3: adaptive rank-1 component selection,
+                           personalized communication budgets)
+
+  * The real-device federated deployment stack under `distributed/`
+    (control plane, protobuf bridge, server orchestrator, thin worker
+    wrapper, Jetson container launch path).
+
+  * Correctness fixes to the federated LoRA download/aggregation path,
+    including `apply_distributed_lora_download` (rank-inferring key
+    canonicalization with strict key consumption) and synchronized task-head
+    federation. See docs/federation_bug.md.
+
+-----------------------------------------------------------------------
+Third-party components NOT redistributed here
+-----------------------------------------------------------------------
+  * OpenAI HumanEval — required by
+    `federatedscope/llm/eval/eval_for_code/humaneval.py`.
+    Not vendored. Install separately:
+        git clone https://github.com/openai/human-eval tools/human-eval
+        pip install -e tools/human-eval
+    (MIT License, Copyright OpenAI)
+
+  * AegisGov DeviceAgent — the C++ device-side agent binary used by the
+    real-device path is a separate project and is NOT redistributed in
+    this repository. See distributed/docker/da_x86/README.md.
+
+  * Datasets (GLUE, Databricks Dolly 15k, CodeAlpaca 20k, HumanEval) are
+    fetched at run time and are subject to their own licenses. See
+    data/README.md.

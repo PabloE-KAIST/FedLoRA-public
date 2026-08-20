@@ -1,0 +1,66 @@
+{
+  "seed": 42,
+  "n_clients": 12,
+  "clients": {
+    "1": {
+      "factor": 0.9037,
+      "bandwidth_setting_id": 1,
+      "avg_ul_mbps": 2.48
+    },
+    "2": {
+      "factor": 0.892,
+      "bandwidth_setting_id": 2,
+      "avg_ul_mbps": 2.45
+    },
+    "3": {
+      "factor": 0.9171,
+      "bandwidth_setting_id": 3,
+      "avg_ul_mbps": 2.52
+    },
+    "4": {
+      "factor": 1.3224,
+      "bandwidth_setting_id": 4,
+      "avg_ul_mbps": 3.63
+    },
+    "5": {
+      "factor": 0.9104,
+      "bandwidth_setting_id": 5,
+      "avg_ul_mbps": 2.5
+    },
+    "6": {
+      "factor": 0.4915,
+      "bandwidth_setting_id": 6,
+      "avg_ul_mbps": 1.35
+    },
+    "7": {
+      "factor": 1.1197,
+      "bandwidth_setting_id": 7,
+      "avg_ul_mbps": 3.07
+    },
+    "8": {
+      "factor": 0.8549,
+      "bandwidth_setting_id": 8,
+      "avg_ul_mbps": 2.35
+    },
+    "9": {
+      "factor": 0.8745,
+      "bandwidth_setting_id": 9,
+      "avg_ul_mbps": 2.4
+    },
+    "10": {
+      "factor": 1.0158,
+      "bandwidth_setting_id": 10,
+      "avg_ul_mbps": 2.79
+    },
+    "11": {
+      "factor": 1.0704,
+      "bandwidth_setting_id": 11,
+      "avg_ul_mbps": 2.94
+    },
+    "12": {
+      "factor": 1.6276,
+      "bandwidth_setting_id": 12,
+      "avg_ul_mbps": 4.47
+    }
+  }
+}

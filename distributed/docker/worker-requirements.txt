@@ -1,0 +1,67 @@
+# Worker container pip requirements (Milestone 1).
+#
+# NOTE: torch / torchvision / torchaudio are intentionally NOT listed here.
+# The worker base image is expected to be an NVIDIA L4T PyTorch image for
+# the target Jetson device class (e.g. nvcr.io/nvidia/l4t-pytorch:...),
+# which already provides a CUDA-compatible torch build. Installing torch
+# via pip here would either fail on arm64 or clobber the device-class
+# build. All other runtime dependencies must be explicit.
+#
+# FedLoRA itself is NOT pip-installed inside the image. The repo is copied
+# into /workspace/FedLoRA and made importable via PYTHONPATH. This matches
+# the v2.3 rule that the worker is a thin wrapper and must not drift from
+# the repo's import path.
+
+# ZMQ transport used by the injected ZMQClientCommManager.
+pyzmq==25.1.2
+
+# YAML config loading.
+PyYAML>=6.0
+
+# Hugging Face stack used by the GLUE/FedIT pipeline.
+# Versions pinned to match the harness env (requirements/requirements.txt)
+# so the distributed path stays byte-compatible with harness validation.
+transformers==4.43.1
+tokenizers==0.19.1
+datasets==2.20.0
+accelerate==0.33.0
+peft==0.4.0
+sentencepiece==0.1.99
+safetensors>=0.4.0
+huggingface-hub==0.35.3
+
+# FederatedScope-side minimum deps (subset of setup.py minimal_requires).
+numpy<1.23.0
+joblib
+threadpoolctl
+scikit-learn==1.0.2
+scipy==1.7.3
+pandas
+fvcore
+iopath
+tensorboardX
+Pympler
+protobuf==3.19.4
+grpcio>=1.45.0
+dill
+yacs==0.1.8
+
+# Transitive deps required because all packages are installed with --no-deps.
+regex
+filelock
+packaging
+requests
+fsspec<=2024.6.1
+pyarrow>=15.0.0
+multiprocess
+xxhash
+psutil
+aiohttp
+pytz
+python-dateutil
+typing-extensions
+tabulate
+portalocker
+
+# Misc.
+tqdm

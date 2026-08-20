@@ -1,0 +1,66 @@
+# syntax=docker/dockerfile:1.6
+#
+# FedLoRA Milestone 1 worker image — Jetson AGX Xavier (device_class=agxavier).
+#
+# Same application layer as Dockerfile.worker.agxorin; only the base image
+# tag differs to match the Xavier JetPack/L4T stack. Keeping the application
+# layer identical across device classes is a hard requirement from the
+# Milestone 1 container spec (one code path, per-class base runtime only).
+#
+# Build from the repo root:
+#   docker build \
+#       -f distributed/docker/Dockerfile.worker.agxavier \
+#       -t fedlora-worker:agxavier \
+#       --build-arg BASE_IMAGE=<jetpack-matched-l4t-pytorch-tag> \
+#       .
+#
+# BASE_IMAGE MUST match the JetPack / L4T release on the target AGX Xavier.
+# Verified on agxavier1 (2026-04-16):
+#   - L4T R35.4.1 / JetPack 5.1.x / CUDA 11.4 / Python 3.8 / Ubuntu 20.04.
+# (This device was flashed to JP5, not the original Xavier-era JP4.6.) Use
+# the r35.4.x l4t-pytorch line:
+#   - nvcr.io/nvidia/l4t-pytorch:r35.4.1-pth2.1-py3
+# The nvcr.io/nvidia/l4t-pytorch tags for r35.4 do not exist on NGC;
+# use the dustynv community image instead (Python 3.8, PyTorch 2.0, CUDA 11.4).
+# A wrong BASE_IMAGE will fail silently at torch CUDA init on the device.
+ARG BASE_IMAGE=dustynv/l4t-pytorch:r35.4.1
+
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/workspace/FedLoRA \
+    HF_HOME=/workspace/.cache/huggingface \
+    TRANSFORMERS_CACHE=/workspace/.cache/huggingface \
+    TOKENIZERS_PARALLELISM=false
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+        libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Force PyPI as the index — dustynv images ship a pip.conf pointing at
+# jetson.webredirect.org which is unreachable during docker build.
+COPY distributed/docker/worker-requirements.txt /tmp/worker-requirements.txt
+RUN python3 -m pip install -i https://pypi.org/simple/ --upgrade "pip<25" setuptools wheel \
+    && python3 -m pip install -i https://pypi.org/simple/ --no-deps -r /tmp/worker-requirements.txt
+
+WORKDIR /workspace/FedLoRA
+COPY . /workspace/FedLoRA
+
+RUN mkdir -p \
+        /workspace/FedLoRA/distributed/data/generated_partitions \
+        /workspace/FedLoRA/distributed/configs \
+        /workspace/FedLoRA/milestone1_logs \
+        /workspace/models \
+        /workspace/.cache/huggingface
+
+CMD ["python3", "-m", "distributed.worker.main", "--help"]

@@ -1,0 +1,40 @@
+# FedLoRA virtual DeviceAgent image for x86_64 server.
+#
+# Extends fedlora-worker:x86 (which has all torch/cuda deps the DA links
+# against) with docker-cli so the DA can run "docker compose" against the
+# host Docker socket.
+#
+# Run with:
+#   docker run -d --network host \
+#     -v /var/run/docker.sock:/var/run/docker.sock \
+#     -v /ssd0/pablo/AegisGov-master/dockerfiles:/dockerfiles:ro \
+#     fedlora-da:x86 \
+#     /usr/local/bin/DeviceAgent --name crystal_gpu5 --device_type virtual ...
+FROM fedlora-worker:x86
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        docker.io \
+        libzmq5 \
+        libpq5 \
+        libpqxx-6.4 \
+        libtbb12 \
+    && rm -rf /var/lib/apt/lists/*
+
+# OpenCV 4.10 libs (not in Ubuntu 22.04 repos)
+COPY distributed/docker/da_x86/libopencv_core.so.4.10.0 /usr/local/lib/
+COPY distributed/docker/da_x86/libopencv_imgcodecs.so.4.10.0 /usr/local/lib/
+COPY distributed/docker/da_x86/libopencv_imgproc.so.4.10.0 /usr/local/lib/
+RUN ln -sf /usr/local/lib/libopencv_core.so.4.10.0 /usr/local/lib/libopencv_core.so.410 \
+    && ln -sf /usr/local/lib/libopencv_imgcodecs.so.4.10.0 /usr/local/lib/libopencv_imgcodecs.so.410 \
+    && ln -sf /usr/local/lib/libopencv_imgproc.so.4.10.0 /usr/local/lib/libopencv_imgproc.so.410
+
+COPY distributed/docker/da_x86/DeviceAgent /usr/local/bin/DeviceAgent
+RUN chmod +x /usr/local/bin/DeviceAgent
+
+# All missing CUDA/torch libs are in conda — expose them via LD_LIBRARY_PATH.
+# No symlinks needed: the dynamic linker searches these paths at startup.
+# System libstdc++ (/usr/lib/x86_64-linux-gnu) must come before conda's
+# older libstdc++ so OpenCV 4.10 (needs GLIBCXX_3.4.30) resolves correctly.
+ENV LD_LIBRARY_PATH=/opt/conda/lib/python3.11/site-packages/torch/lib:/usr/local/lib:/usr/lib/x86_64-linux-gnu:/opt/conda/lib
+
+WORKDIR /build_host

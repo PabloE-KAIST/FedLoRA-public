@@ -1,0 +1,172 @@
+# FedLoRA Distributed Deployment Configuration
+# 12 clients (3 Orin Nanos replaced by virtual devices on x86-worker GPUs 5-7), 20 rounds
+use_gpu: True
+device: 0
+seed: 50
+
+# Federate settings
+federate:
+  mode: distributed
+  method: FedAvg
+  client_num: 12
+  total_round_num: 20
+  sample_client_num: 12
+  share_local_model: false
+  online_aggr: false
+  ignore_weight: false
+  communication:
+    source: tc_json
+    mode: dynamic
+    tc_json_ul_path: 1_scripts/distributed/generated_bandwidths/bandwidth_limits_ul.json
+    tc_json_dl_path: 1_scripts/distributed/generated_bandwidths/bandwidth_limits_dl.json
+    uplink_min_mbps: 1.2
+    uplink_max_mbps: 4.2
+    downlink_mbps: 30.1
+
+# Distributed settings (for ZMQ transport)
+distribute:
+  server_host: "${FEDLORA_CONTROLLER_IP:?set FEDLORA_CONTROLLER_IP}"
+  server_port: 60001
+
+# Model settings
+model:
+  type: /workspace/models/deberta-large@huggingface_llm
+  model_type: microsoft/deberta-large
+  out_channels: 2
+  task: SequenceClassification
+
+# Data settings
+data:
+  root: data/
+  type: sst2@glue
+  splits:
+    - 0.90
+    - 0.10
+  splitter: iid
+  splitter_args:
+    - alpha: 1.0
+
+# GLUE settings
+glue:
+  task_name: sst2
+  max_length: 128
+  retry_on_nan_loss: true
+  adapter:
+    use: true
+    mv_to_cpu: false
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        target_modules:
+          - attention.self.in_proj
+          - attention.output.dense
+          - intermediate.dense
+          - output.dense
+        r: 8
+        lora_alpha: 16
+        lora_dropout: 0.05
+    base_quant:
+      enabled: true
+      distribution:
+        '4': 0
+        '8': 0
+        '16': 1
+        '32': 0
+      lora_dtype: fp32
+    max_rank: 8
+    hetero_strategy: homo
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+    fah:
+      enabled: false
+    hetlora:
+      enabled: false
+    adasparse_lora:
+      enabled: false
+    adasparse_lorav2:
+      enabled: false
+
+# LLM adapter config (for compatibility)
+llm:
+  tok_len: 128
+  adapter:
+    use: true
+    mv_to_cpu: false
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        target_modules:
+          - attention.self.in_proj
+          - attention.output.dense
+          - intermediate.dense
+          - output.dense
+        r: 8
+        lora_alpha: 16
+        lora_dropout: 0.05
+    base_quant:
+      enabled: true
+      distribution:
+        '4': 0
+        '8': 0
+        '16': 1
+        '32': 0
+      lora_dtype: fp32
+    max_rank: 8
+    hetero_strategy: homo
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+    fah:
+      enabled: false
+    hetlora:
+      enabled: false
+    adasparse_lora:
+      enabled: false
+    adasparse_lorav2:
+      enabled: false
+
+# Trainer
+trainer:
+  type: gluetrainer
+
+# Training settings
+train:
+  local_update_steps: 30
+  batch_or_epoch: batch
+  is_enable_half: false
+  optimizer:
+    type: AdamW
+    lr: 0.0005
+    weight_decay: 0.01
+  scheduler:
+    type: CosineAnnealingLR
+    T_max: 20
+
+# Criterion
+criterion:
+  type: CrossEntropyLoss
+
+# Evaluation settings
+eval:
+  freq: 5
+  metrics:
+    - acc
+    - f1
+    - loss
+    - mcc
+    - pearson
+  split:
+    - val
+  report:
+    - weighted_avg
+  best_res_update_round_wise_key: val_acc
+  count_flops: false
+
+# Dataloader settings
+dataloader:
+  batch_size: 32
+  num_workers: 0
+
+# Output settings
+outdir: exp_distributed/fedit

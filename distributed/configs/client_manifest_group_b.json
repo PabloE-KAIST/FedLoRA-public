@@ -1,0 +1,69 @@
+{
+    "version": "1.2",
+    "description": "Sub-fleet Group B (6 clients) for small GLUE tasks. Balanced: 2 agxorin + 1 agxavier + 2 x86 + 1 orinnx.",
+    "clients": [
+        {
+            "client_id": 1,
+            "device_name": "agxorin3",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin3",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_1.pkl",
+            "bandwidth_setting_id": 1,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 2,
+            "device_name": "agxorin4",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin4",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_2.pkl",
+            "bandwidth_setting_id": 2,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 3,
+            "device_name": "agxavier2",
+            "device_class": "agxavier",
+            "container_name": "fl_worker_agxavier2",
+            "image": "fedlora-worker:agxavier",
+            "partition_path": "distributed/data/generated_partitions/client_3.pkl",
+            "bandwidth_setting_id": 3,
+            "nic": "eth0"
+        },
+        {
+            "client_id": 4,
+            "device_name": "crystal_gpu3",
+            "device_class": "x86",
+            "container_name": "fl_worker_crystal_gpu3",
+            "image": "fedlora-worker:x86",
+            "da_port_offset": 500,
+            "partition_path": "distributed/data/generated_partitions/client_4.pkl",
+            "bandwidth_setting_id": 4,
+            "nic": "enp129s0f0"
+        },
+        {
+            "client_id": 5,
+            "device_name": "crystal_gpu2",
+            "device_class": "x86",
+            "container_name": "fl_worker_crystal_gpu2",
+            "image": "fedlora-worker:x86",
+            "da_port_offset": 400,
+            "partition_path": "distributed/data/generated_partitions/client_5.pkl",
+            "bandwidth_setting_id": 5,
+            "nic": "enp129s0f0"
+        },
+        {
+            "client_id": 6,
+            "device_name": "orinnx2",
+            "device_class": "agxorin",
+            "budget_class": "orinnx",
+            "container_name": "fl_worker_orinnx2",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_6.pkl",
+            "bandwidth_setting_id": 6,
+            "nic": "eno1"
+        }
+    ]
+}

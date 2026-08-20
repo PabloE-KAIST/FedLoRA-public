@@ -1,0 +1,49 @@
+# syntax=docker/dockerfile:1.6
+#
+# FedLoRA worker image — x86_64 GPU server (virtual device mode).
+#
+# Same application layer as the Jetson Dockerfiles; only the base image
+# differs. Uses official PyTorch image with CUDA 12.1 for x86_64.
+#
+# Build from the repo root:
+#   docker build \
+#       -f distributed/docker/Dockerfile.worker.x86 \
+#       -t fedlora-worker:x86 .
+ARG BASE_IMAGE=pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/workspace/FedLoRA \
+    HF_HOME=/workspace/.cache/huggingface \
+    TRANSFORMERS_CACHE=/workspace/.cache/huggingface \
+    TOKENIZERS_PARALLELISM=false
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+        libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+COPY distributed/docker/worker-requirements-x86.txt /tmp/worker-requirements.txt
+RUN pip install --upgrade "pip<25" setuptools wheel \
+    && pip install --no-deps -r /tmp/worker-requirements.txt
+
+WORKDIR /workspace/FedLoRA
+COPY . /workspace/FedLoRA
+
+RUN mkdir -p \
+        /workspace/FedLoRA/distributed/data/generated_partitions \
+        /workspace/FedLoRA/distributed/configs \
+        /workspace/models \
+        /workspace/.cache/huggingface
+
+CMD ["python3", "-m", "distributed.worker.main", "--help"]

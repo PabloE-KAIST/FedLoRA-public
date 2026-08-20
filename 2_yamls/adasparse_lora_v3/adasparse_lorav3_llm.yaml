@@ -1,0 +1,133 @@
+seed: 50
+use_gpu: True
+device: 0
+
+outdir: exp_standalone/adasparse_lorav3_llm
+
+debug: False
+
+federate:
+  mode: standalone
+  method: adasparse_lorav3
+  client_num: 12
+  total_round_num: 20
+  save_to: "ckpt/adasparse_lorav3_llm.ckpt"
+  online_aggr: False
+  ignore_weight: False
+  share_local_model: False
+
+data:
+  root: data/
+  type: 'dolly-15k@llm'
+  splits: [0.90, 0.10]
+  splitter: 'iid'
+
+dataloader:
+  batch_size: 1
+
+model:
+  type: 'meta-llama/Llama-3.2-1B@huggingface_llm'
+
+trainer:
+  type: llmtrainer
+
+train:
+  local_update_steps: 30
+  batch_or_epoch: batch
+  optimizer:
+    type: AdamW
+    lr: 0.0003
+    weight_decay: 0.01
+  scheduler:
+    type: CosineAnnealingLR
+    T_max: 20
+  is_enable_half: False
+
+criterion:
+  type: CrossEntropyLoss
+
+eval:
+  freq: 5
+  metrics: ['loss']
+  split: ['val']
+  report: ['weighted_avg']
+  best_res_update_round_wise_key: val_avg_loss
+  count_flops: False
+
+###############################################################################
+# LLM-specific settings (primary)
+###############################################################################
+llm:
+  tok_len: 256
+  retry_on_nan_loss: True
+
+  adapter:
+    use: True
+    mv_to_cpu: False
+
+    args:
+      - adapter_package: peft
+        adapter_method: lora
+        target_modules: ['q_proj', 'k_proj', 'v_proj', 'o_proj',
+                         'gate_proj', 'down_proj', 'up_proj']
+        r: 8
+        lora_alpha: 16
+        lora_dropout: 0.05
+
+    base_quant:
+      enabled: False
+
+    max_rank: 64
+    hetero_strategy: heavy_tail
+    hetero_ranks: {}
+    hetero_alpha: {}
+    hetero_target_modules: {}
+
+    fah:
+      enabled: False
+
+    hetlora:
+      enabled: False
+
+    adasparse_lora:
+      enabled: False
+
+    adasparse_lorav2:
+      enabled: False
+
+    adasparse_lorav3:
+      enabled: True
+      rank_min: 4
+      rank_max: 64
+      init_rank: 64
+
+      stage1:
+        gamma: 0.99
+        regularizer_weight: 0.001
+
+      stage2:
+        enabled: True
+        q_up_bits: 32
+        q_down_bits: 32
+        cmeta_bits: 32
+        uplink_budget_window_s: 1.0
+        downlink_budget_window_s: 1.0
+        selection_rule: greedy_ratio
+        residual_enabled: True
+
+      aggregation:
+        mode: sample_size
+        epsilon: 1e-8
+
+      # NOTE: cfg_llm.py defaults these to True. GLUE Phase A used False/False.
+      # Flipped to False here for parity with GLUE Milestone 1. Phase C.0 also
+      # runs a `globalcomp_on` variant to disentangle this from the stage1 flags.
+      stage1_global_competition: False
+      stage2_global_competition: False
+
+###############################################################################
+# GLUE adapter config (disabled stub)
+###############################################################################
+glue:
+  adapter:
+    use: False

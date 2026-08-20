@@ -1,0 +1,55 @@
+# FedLoRA worker compose template for Jetson devices.
+#
+# This template is compatible with AegisGov device_agent's runCompose():
+#   - docker_tag -> image
+#   - executable -> command (overridden via START_STRING env var)
+#   - json_config -> passed as START_STRING environment variable
+#
+# The device_agent calls:
+#   docker-compose -f docker-compose.jetson.yml up
+# after setting environment variables from the protobuf ContainerConfig.
+#
+# Required environment variables (set by device_agent or operator):
+#   FEDLORA_IMAGE       - Worker image tag (e.g. fedlora-worker:agxorin)
+#   START_STRING         - JSON config string from ContainerConfig.json_config
+#   FEDLORA_RUNTIME_ROOT - Host path to fedlora_runtime (e.g. ${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime})
+#   FEDLORA_CONTAINER_NAME - Container name (e.g. fl_worker_agxorin1)
+#
+# Usage (manual / operator):
+#   export FEDLORA_IMAGE=fedlora-worker:agxorin
+#   export FEDLORA_RUNTIME_ROOT=${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}
+#   export FEDLORA_CONTAINER_NAME=fl_worker_agxorin1
+#   export START_STRING='{"client_id":1,"partition_path":"...","config_path":"..."}'
+#   export FEDLORA_FL_SERVER_HOST=${FEDLORA_CONTROLLER_IP:?set FEDLORA_CONTROLLER_IP}   # FL payload server IP
+#   docker-compose -f docker-compose.jetson.yml up
+
+version: "3.8"
+
+services:
+  worker:
+    image: ${FEDLORA_IMAGE:-fedlora-worker:agxorin}
+    container_name: ${FEDLORA_CONTAINER_NAME:-fl_worker}
+    network_mode: host
+    runtime: nvidia
+    environment:
+      - PYTHONPATH=/workspace/FedLoRA
+      - HF_HOME=/workspace/.cache/huggingface
+      - TRANSFORMERS_CACHE=/workspace/.cache/huggingface
+      - TOKENIZERS_PARALLELISM=false
+      - START_STRING=${START_STRING:-}
+    volumes:
+      - ${FEDLORA_RUNTIME_ROOT:-${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}}/partitions:/workspace/FedLoRA/distributed/data/generated_partitions
+      - ${FEDLORA_RUNTIME_ROOT:-${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}}/configs:/workspace/FedLoRA/distributed/configs
+      - ${FEDLORA_RUNTIME_ROOT:-${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}}/models:/workspace/models
+      - ${FEDLORA_RUNTIME_ROOT:-${FEDLORA_JETSON_RUNTIME:-/home/${FEDLORA_JETSON_USER:-ubuntu}/fedlora_runtime}}/logs:/workspace/FedLoRA/milestone1_logs
+    command: >-
+      python3 -m distributed.worker.main
+      --client-id ${FEDLORA_CLIENT_ID:-1}
+      --container-name ${FEDLORA_CONTAINER_NAME:-fl_worker}
+      --partition-path ${FEDLORA_PARTITION_PATH:-distributed/data/generated_partitions/client_1.pkl}
+      --config ${FEDLORA_CONFIG_PATH:-distributed/configs/fedit_distributed.yaml}
+      --device-agent-host ${FEDLORA_DEVICE_AGENT_HOST:-127.0.0.1}
+      --device-agent-port-offset ${FEDLORA_DEVICE_AGENT_PORT_OFFSET:-0}
+      --fl-server-host ${FEDLORA_FL_SERVER_HOST:-}
+      --fl-server-port-offset ${FEDLORA_FL_SERVER_PORT_OFFSET:-0}
+      ${FEDLORA_EXTRA_ARGS:-}

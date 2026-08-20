@@ -1,0 +1,40 @@
+# FedLoRA worker compose template for x86_64 server (virtual device mode).
+#
+# Mirrors docker-compose.aegisgov.jetson.yml but adapted for server paths
+# and per-GPU isolation via NVIDIA_VISIBLE_DEVICES.
+#
+# AegisGov env vars (set by runCompose()):
+#   DOCKER_NAME      - Docker image tag
+#   CONTAINER_NAME   - Container name
+#   EXECUTABLE       - Path to launcher script
+#   START_STRING     - JSON config with worker args
+#   DEVICE           - GPU device ID (set by --dev_gpuID)
+#   PORT             - Control port
+#   PORT_OFFSET      - System offset
+
+services:
+  workload:
+    image: ${DOCKER_NAME}
+    container_name: ${CONTAINER_NAME}
+    restart: "no"
+    network_mode: host
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=${DEVICE}
+      - PYTHONPATH=/workspace/FedLoRA
+      - HF_HOME=/workspace/.cache/huggingface
+      - TRANSFORMERS_CACHE=/workspace/.cache/huggingface
+      - TOKENIZERS_PARALLELISM=false
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:128
+      - START_STRING=${START_STRING:-}
+    volumes:
+      - /ssd0/pablo/fedlora_runtime/partitions:/workspace/FedLoRA/distributed/data/generated_partitions
+      - /ssd0/pablo/fedlora_runtime/configs:/workspace/FedLoRA/distributed/configs
+      - /ssd0/pablo/fedlora_runtime/models:/workspace/models
+      - /ssd0/pablo/fedlora_runtime/logs:/workspace/FedLoRA/logs
+      - /ssd0/pablo/fedlora_runtime/launch_worker.sh:/workspace/launch_worker.sh
+      - /ssd0/pablo/fedlora_runtime/distributed:/workspace/FedLoRA/distributed
+      - /ssd0/pablo/fedlora_runtime/federatedscope:/workspace/FedLoRA/federatedscope
+      - /ssd0/pablo/fedlora_runtime/2_yamls:/workspace/FedLoRA/2_yamls
+    command: >-
+      ${EXECUTABLE}

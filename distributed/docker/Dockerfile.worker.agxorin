@@ -1,0 +1,79 @@
+# syntax=docker/dockerfile:1.6
+#
+# FedLoRA Milestone 1 worker image — Jetson AGX Orin (device_class=agxorin).
+#
+# Per the v2.3 plan and Milestone 1 spec, this image contains:
+#   - FedLoRA repo + distributed/ worker code
+#   - patched federatedscope/ (comm_manager injection path)
+#   - Python runtime deps for the injected FedLoRA Client
+#
+# It must NOT contain:
+#   - client-specific partitions (mounted at runtime)
+#   - client-specific manifests (mounted at runtime)
+#   - base model weights (mounted at runtime)
+#   - logs or outputs
+#
+# Build from the repo root:
+#   docker build \
+#       -f distributed/docker/Dockerfile.worker.agxorin \
+#       -t fedlora-worker:agxorin \
+#       --build-arg BASE_IMAGE=<jetpack-matched-l4t-pytorch-tag> \
+#       .
+#
+# BASE_IMAGE MUST match the JetPack / L4T release actually installed on the
+# target AGX Orin device. Verified on agxorin1 (2026-04-16):
+#   - L4T R36.4.4 / JetPack 6.2.1 / CUDA 12.6 / Python 3.10 / Ubuntu 22.04.
+# The nvcr.io/nvidia/l4t-pytorch tags for r36.4 do not exist on NGC;
+# use the dustynv community image instead (Python 3.10, PyTorch 2.4, CUDA 12.6).
+# A wrong BASE_IMAGE will fail silently at torch CUDA init on the device.
+ARG BASE_IMAGE=dustynv/l4t-pytorch:r36.4.0
+
+FROM ${BASE_IMAGE}
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH=/workspace/FedLoRA \
+    HF_HOME=/workspace/.cache/huggingface \
+    TRANSFORMERS_CACHE=/workspace/.cache/huggingface \
+    TOKENIZERS_PARALLELISM=false
+
+# OS packages needed by HF tokenizers / sentencepiece / general build.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        curl \
+        ca-certificates \
+        build-essential \
+        pkg-config \
+        libssl-dev \
+        libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install worker-only Python deps. Torch is inherited from the base image.
+# Force PyPI as the index — dustynv images ship a pip.conf pointing at
+# jetson.webredirect.org which is unreachable during docker build.
+COPY distributed/docker/worker-requirements.txt /tmp/worker-requirements.txt
+RUN python3 -m pip install -i https://pypi.org/simple/ --upgrade "pip<25" setuptools wheel \
+    && python3 -m pip install -i https://pypi.org/simple/ --no-deps -r /tmp/worker-requirements.txt
+
+# Copy the FedLoRA repo. Build context hygiene is enforced by
+# .dockerignore at the repo root — partitions, logs, exp/, wandb/, .git,
+# and other runtime-mounted artifacts are excluded.
+WORKDIR /workspace/FedLoRA
+COPY . /workspace/FedLoRA
+
+# Runtime-mounted paths expected to exist inside the container.
+# `docker run -v ...` at launch will bind-mount real content over these.
+RUN mkdir -p \
+        /workspace/FedLoRA/distributed/data/generated_partitions \
+        /workspace/FedLoRA/distributed/configs \
+        /workspace/FedLoRA/milestone1_logs \
+        /workspace/models \
+        /workspace/.cache/huggingface
+
+# Default command is the worker help screen; real launches override with
+# `python -m distributed.worker.main --client-id ... --dry-run-init` (or
+# without the flag once Milestone 2 introduces FL rounds).
+CMD ["python3", "-m", "distributed.worker.main", "--help"]

@@ -1,0 +1,70 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# --- Environments ---
+envs/
+venv/
+.venv/
+.env
+.conda/
+
+# --- Datasets & models: fetch them, never commit them ---
+# NB: `data/*` not `data/`, so the negation below can re-include the README
+# (git cannot re-include a file whose parent directory is itself excluded).
+data/*
+!data/README.md
+models/
+
+# --- Experiment outputs, checkpoints, logs: NEVER commit ---
+# (the upstream research repo accumulated ~21.7k of these before this rule existed)
+exp/
+exp_*/
+0_results/
+ckpt/
+logs/
+outputs/
+wandb/
+runs/
+*.log
+*.ckpt
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.arrow
+
+# --- Generated artifacts ---
+distributed/data/generated_partitions/
+2_yamls/*/aux/
+
+# --- Archives (a >100MB tarball is how a git repo gets bricked) ---
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# --- Third-party trees fetched at setup time (see docs/reproduction.md) ---
+References/
+tools/
+
+# --- Hugging Face cache (if HF_HOME lands in the repo) ---
+.locks/
+models--*/
+.cache/
+
+# --- Local tooling / editor ---
+.vscode/
+.idea/
+*.swp
+.DS_Store
+CLAUDE.md
+.claude/

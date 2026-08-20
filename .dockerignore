@@ -1,0 +1,46 @@
+# Milestone 1 worker-image build context hygiene.
+# Keep the docker build context small and free of runtime-mounted artifacts.
+# Partitions, models, logs, and outputs are mounted at container run time —
+# never baked into the image.
+
+.git
+.gitignore
+.github/
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual envs (should never be copied into images)
+venv/
+.venv/
+env/
+.env
+
+# Large runtime-mounted artifacts (MUST be mounted, not baked)
+distributed/data/generated_partitions/*.pkl
+distributed/data/generated_partitions/*.metadata.json
+distributed/data/generated_partitions/validation_report.json
+
+# Experiment outputs / logs / checkpoints
+exp/
+milestone1_logs/
+logs/
+outputs/
+wandb/
+*.log
+
+# Docker build artifacts (avoid self-recursion of tarballs)
+*.tar
+*.tgz

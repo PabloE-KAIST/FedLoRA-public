@@ -1,0 +1,132 @@
+{
+    "version": "1.2",
+    "description": "Static client manifest for FedLoRA distributed deployment — 12-client fleet (3 Orin Nanos replaced by virtual devices on x86-worker server GPUs 3, 4, 5)",
+    "note": "Orin Nanos excluded (orinano1/3: OOM/NVML on 8GB, orinano2: competing YOLO). Replaced by 3 virtual devices on x86-worker (an x86 host). orinnx1/2/3 renumbered to 10/11/12.",
+    "clients": [
+        {
+            "client_id": 1,
+            "device_name": "agxorin1",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin1",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_1.pkl",
+            "bandwidth_setting_id": 1,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 2,
+            "device_name": "agxorin2",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin2",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_2.pkl",
+            "bandwidth_setting_id": 2,
+            "nic": "eth0"
+        },
+        {
+            "client_id": 3,
+            "device_name": "agxorin3",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin3",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_3.pkl",
+            "bandwidth_setting_id": 3,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 4,
+            "device_name": "agxorin4",
+            "device_class": "agxorin",
+            "container_name": "fl_worker_agxorin4",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_4.pkl",
+            "bandwidth_setting_id": 4,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 5,
+            "device_name": "agxavier1",
+            "device_class": "agxavier",
+            "container_name": "fl_worker_agxavier1",
+            "image": "fedlora-worker:agxavier",
+            "partition_path": "distributed/data/generated_partitions/client_5.pkl",
+            "bandwidth_setting_id": 5,
+            "nic": "eth0"
+        },
+        {
+            "client_id": 6,
+            "device_name": "agxavier2",
+            "device_class": "agxavier",
+            "container_name": "fl_worker_agxavier2",
+            "image": "fedlora-worker:agxavier",
+            "partition_path": "distributed/data/generated_partitions/client_6.pkl",
+            "bandwidth_setting_id": 6,
+            "nic": "eth0"
+        },
+        {
+            "client_id": 7,
+            "device_name": "crystal_gpu5",
+            "device_class": "x86",
+            "container_name": "fl_worker_crystal_gpu5",
+            "image": "fedlora-worker:x86",
+            "partition_path": "distributed/data/generated_partitions/client_7.pkl",
+            "bandwidth_setting_id": 7,
+            "nic": "enp129s0f0"
+        },
+        {
+            "client_id": 8,
+            "device_name": "crystal_gpu4",
+            "device_class": "x86",
+            "container_name": "fl_worker_crystal_gpu4",
+            "image": "fedlora-worker:x86",
+            "da_port_offset": 200,
+            "partition_path": "distributed/data/generated_partitions/client_8.pkl",
+            "bandwidth_setting_id": 8,
+            "nic": "enp129s0f0"
+        },
+        {
+            "client_id": 9,
+            "device_name": "crystal_gpu3",
+            "device_class": "x86",
+            "container_name": "fl_worker_crystal_gpu3",
+            "image": "fedlora-worker:x86",
+            "da_port_offset": 500,
+            "partition_path": "distributed/data/generated_partitions/client_9.pkl",
+            "bandwidth_setting_id": 9,
+            "nic": "enp129s0f0"
+        },
+        {
+            "client_id": 10,
+            "device_name": "orinnx1",
+            "device_class": "agxorin",
+            "budget_class": "orinnx",
+            "container_name": "fl_worker_orinnx1",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_10.pkl",
+            "bandwidth_setting_id": 10,
+            "nic": "enP8p1s0"
+        },
+        {
+            "client_id": 11,
+            "device_name": "orinnx2",
+            "device_class": "agxorin",
+            "budget_class": "orinnx",
+            "container_name": "fl_worker_orinnx2",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_11.pkl",
+            "bandwidth_setting_id": 11,
+            "nic": "eno1"
+        },
+        {
+            "client_id": 12,
+            "device_name": "orinnx3",
+            "device_class": "agxorin",
+            "budget_class": "orinnx",
+            "container_name": "fl_worker_orinnx3",
+            "image": "fedlora-worker:agxorin",
+            "partition_path": "distributed/data/generated_partitions/client_12.pkl",
+            "bandwidth_setting_id": 12,
+            "nic": "enP8p1s0"
+        }
+    ]
+}

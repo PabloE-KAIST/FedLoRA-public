@@ -1,0 +1,49 @@
+# Minimal FedLoRA config for distributed gate tests (quadratic tabular task).
+# Gate 2 dry-run now uses this mainly for real config construction, while the
+# worker harness builds a tiny compatible injected Client directly.
+
+federate:
+  mode: distributed
+  method: fedavg
+  client_num: 1
+  sample_client_num: 1
+  total_round_num: 1
+  share_local_model: true
+  online_aggr: false
+  use_ss: false
+
+distribute:
+  data_idx: 1
+
+data:
+  root: data/
+  type: quadratic
+  splitter: iid
+  quadratic:
+    dim: 4
+    max_curv: 2.0
+    min_curv: 0.5
+
+model:
+  type: quadratic
+
+criterion:
+  type: MSELoss
+
+train:
+  local_update_steps: 1
+  batch_or_epoch: batch
+
+dataloader:
+  batch_size: 2
+  num_workers: 0
+
+eval:
+  freq: 100000000
+
+trainer:
+  type: general
+
+backend: torch
+seed: 42
+use_gpu: false

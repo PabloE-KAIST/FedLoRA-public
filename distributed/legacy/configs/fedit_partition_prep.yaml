@@ -1,0 +1,69 @@
+# FedLoRA Distributed Deployment Configuration
+# This configuration is for FedIT (basic federated learning) on GLUE tasks
+use_gpu: True
+device: 0
+# Federate settings
+federate:
+  mode: distributed
+  method: fedavg
+  client_num: 2
+  total_round_num: 5
+  sample_client_num: 2
+  share_local_model: true
+  online_aggr: false
+
+# Distributed settings (for ZMQ transport)
+distribute:
+   server_host: "192.168.1.100"
+   server_port: 60001
+   # ZMQ specific settings
+#   zmq:
+#     send_timeout_ms: 5000
+#     recv_timeout_ms: 30000
+#     high_water_mark: 1000
+
+# Data settings
+data:
+  root: data/
+  type: 'sst2@glue'
+  splitter: iid
+  splitter_args:
+    - alpha: 1.0
+
+model:
+  type: 'microsoft/deberta-large@huggingface_llm'
+
+# GLUE adapter settings
+# glue:
+#   model_name: "google/bert_uncased_L-2_H-128_A-2"
+#   task_name: sst2
+#   adapter:
+#     use_lora: true
+#     lora_r: 8
+#     lora_alpha: 16
+#     target_modules:
+#       - query
+#       - value
+
+# Training settings
+train:
+  optimizer:
+    type: AdamW
+    lr: 0.0001
+  local_update_steps: 10
+  batch_or_epoch: batch
+
+# Evaluation settings
+eval:
+  freq: 1
+  split:
+    - test
+  best_res_update_round_wise_key: test_acc
+
+# Dataloader settings
+dataloader:
+  batch_size: 16
+  num_workers: 0
+
+# Output settings
+outdir: exp/distributed_fedit/
